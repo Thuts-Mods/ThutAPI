@@ -1,0 +1,28 @@
+package thut.api.particle;
+
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import org.joml.Vector3f;
+
+public interface IParticle
+{
+    int getDuration();
+
+    void kill();
+
+    long lastTick();
+
+    @OnlyIn(value = Dist.CLIENT)
+    public void renderParticle(final com.mojang.blaze3d.vertex.VertexConsumer buffer,
+            final net.minecraft.client.Camera entityIn, final float partialTicks, Vector3f offset);
+
+    void setColour(int colour);
+
+    void setDuration(int duration);
+
+    void setLastTick(long tick);
+
+    void setLifetime(int ticks);
+
+    void setSize(float size);
+}

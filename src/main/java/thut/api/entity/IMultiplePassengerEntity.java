@@ -1,0 +1,149 @@
+package thut.api.entity;
+
+import java.util.List;
+import java.util.UUID;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.entity.Entity;
+import org.joml.Vector3f;
+
+public interface IMultiplePassengerEntity
+{
+    public static class Seat
+    {
+        public static final UUID BLANK = new UUID(0, 0);
+
+        public static Seat readFromNBT(final CompoundTag tag)
+        {
+            final byte[] arr = tag.getByteArray("v");
+            final FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.copiedBuffer(arr));
+            return new Seat(buf);
+        }
+
+        public Vector3f seat;
+
+        private UUID entityId;
+
+        public Seat(final ByteBuf buf)
+        {
+            this.seat = new Vector3f(buf.readFloat(), buf.readFloat(), buf.readFloat());
+            this.setEntityId(new UUID(buf.readLong(), buf.readLong()));
+        }
+
+        public Seat(final Vector3f vector3f, final UUID readInt)
+        {
+            this.seat = vector3f;
+            this.setEntityId(readInt != null ? readInt : Seat.BLANK);
+        }
+
+        @Override
+        public Object clone()
+        {
+            return new Seat(new Vector3f(this.seat), this.getEntityId());
+        }
+
+        @Override
+        public boolean equals(final Object obj)
+        {
+            if (!(obj instanceof Seat other)) return false;
+            return this.getEntityId().equals(other.getEntityId()) && this.seat.distanceSquared(other.seat)<1e-2;
+        }
+
+        /**
+         * @return the entityId
+         */
+        public UUID getEntityId()
+        {
+            return this.entityId;
+        }
+
+        /**
+         * @param entityId the entityId to set
+         */
+        public void setEntityId(final UUID entityId)
+        {
+            this.entityId = entityId;
+        }
+
+        @Override
+        public String toString()
+        {
+            return this.seat + " " + this.getEntityId();
+        }
+
+        public void writeToBuf(final ByteBuf buf)
+        {
+            buf.writeFloat(this.seat.x);
+            buf.writeFloat(this.seat.y);
+            buf.writeFloat(this.seat.z);
+            buf.writeLong(this.getEntityId().getMostSignificantBits());
+            buf.writeLong(this.getEntityId().getLeastSignificantBits());
+        }
+
+        public void writeToNBT(final CompoundTag tag)
+        {
+            final FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer(8));
+            this.writeToBuf(buffer);
+            tag.putByteArray("v", buffer.array());
+        }
+    }
+
+    /**
+     * Gets the passenger for a seat, if this returns null, it may attempt to
+     * add someone to this seat. The seat given here will always be from the
+     * contents of the return of getSeats()
+     *
+     * @param seat
+     * @return
+     */
+    Entity getPassenger(Vector3f seat);
+
+    /**
+     * Current pitch rotation for offsetting the ridden entitites
+     *
+     * @return
+     */
+    float getPitch();
+
+    /**
+     * for rendering interpolation.
+     *
+     * @return
+     */
+    float getPrevPitch();
+
+    /**
+     * for rendering interpolation.
+     *
+     * @return
+     */
+    float getPrevYaw();
+
+    /**
+     * Gets the seated location of this passenger, used for properly translating
+     * onto the seat.
+     *
+     * @param passenger
+     * @return
+     */
+    Vector3f getSeat(Entity passenger);
+
+    /**
+     * List of seats on this entity;
+     *
+     * @return
+     */
+    List<Vector3f> getSeats();
+
+    /**
+     * Current rotation yaw, for offsetting of the ridden entitites.
+     *
+     * @return
+     */
+    float getYaw();
+
+    void updateSeat(int index, UUID id);
+}

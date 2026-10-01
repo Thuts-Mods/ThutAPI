@@ -1,0 +1,40 @@
+package thut.api.block;
+
+import java.util.UUID;
+
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import thut.api.attachments.IOwnable;
+
+public interface IOwnableTE extends IOwnable
+{
+    default boolean canEdit(final LivingEntity editor)
+    {
+        final UUID owner = this.getOwnerId();
+        if (owner == null) return canEditUnowned() || (editor instanceof Player player && player.isCreative());
+        if (editor == null) return false;
+        return editor.getUUID().equals(owner) || (editor instanceof Player player && player.isCreative());
+    }
+
+    default void setPlacer(final LivingEntity placer)
+    {
+        this.setOwner(placer);
+        this.setOwner(placer.getUUID());
+    }
+
+    /**
+     * Whether this TE will drop when left clicked with a stick
+     */
+    default boolean dropWithStick()
+    {
+        return true;
+    }
+
+    /**
+     * Whether unowned instances can be broken
+     */
+    default boolean canEditUnowned()
+    {
+        return true;
+    }
+}
